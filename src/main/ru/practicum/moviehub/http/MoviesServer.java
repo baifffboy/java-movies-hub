@@ -14,6 +14,7 @@ public class MoviesServer {
         try {
             server = HttpServer.create(new InetSocketAddress(i), 0);
             server.createContext("/movies", new MoviesHandler());
+            server.createContext("/movies/", new MoviesHandlerWithID());
         } catch (IOException e) {
             throw new RuntimeException("Не удалось создать HTTP-сервер", e);
         }
