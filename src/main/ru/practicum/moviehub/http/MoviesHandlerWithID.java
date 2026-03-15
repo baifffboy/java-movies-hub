@@ -79,9 +79,9 @@ public class MoviesHandlerWithID extends BaseHttpHandler {
 
     public int parseId(HttpExchange ex) throws IOException {
         String path = ex.getRequestURI().getPath();
-        String id_string = path.split("/")[2];
+        String idString = path.split("/")[2];
         try {
-            return Integer.parseInt(id_string);
+            return Integer.parseInt(idString);
         } catch (NumberFormatException e) {
             responseErrorGeneration(
                     "400 Bad Request",
