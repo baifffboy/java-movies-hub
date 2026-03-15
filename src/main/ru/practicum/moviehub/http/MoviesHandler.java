@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MoviesHandler extends BaseHttpHandler {
     @Override
@@ -62,13 +61,11 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     public String storeToJSONWithoutIDWithYearFilter(int year) {
-        return gson.toJson(MoviesStore.getMoviesMap().values().stream()
-                .filter(movie -> movie.getYear() == year)
-                .collect(Collectors.toSet()));
+        return gson.toJson(MoviesStore.filterMoviesByYear(year));
     }
 
     public String storeToJSONWithID() {
-        long counter = MoviesStore.getMoviesMap().size();
+        int counter = MoviesStore.getMoviesMap().size();
         return gson.toJson(MoviesStore.getMoviesMap().get(counter));
     }
 
