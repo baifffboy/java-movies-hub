@@ -88,8 +88,7 @@ public class MoviesHandler extends BaseHttpHandler {
         }
 
         String contentLength = ex.getRequestHeaders().getFirst("Content-Length");
-        if (contentLength == null) {
-        } else if (Integer.parseInt(contentLength) == 0) {
+        if (Integer.parseInt(contentLength) == 0) {
             responseErrorGeneration(
                     "422 Unprocessable Entity",
                     new ArrayList<>(List.of("Пустое тело запроса")),
