@@ -25,19 +25,14 @@ public class MoviesHandlerWithID extends BaseHttpHandler {
         }
 
         switch (method) {
-            case "GET" -> {
-                getHeadersAndBodyOfMovies(ex);
-            }
-            case "DELETE" -> {
-                deleteMovie(ex);
-            }
-            default -> {
-                responseErrorGeneration(
-                        "405 Bad Method",
-                        new ArrayList<>(List.of("Данный метод не обрабатывается сервером")),
-                        405,
-                        ex);
-            }
+            case "GET" -> getHeadersAndBodyOfMovies(ex);
+            case "DELETE" -> deleteMovie(ex);
+            default -> responseErrorGeneration(
+                    "405 Bad Method",
+                    new ArrayList<>(List.of("Данный метод не обрабатывается сервером")),
+                    405,
+                    ex);
+
         }
     }
 

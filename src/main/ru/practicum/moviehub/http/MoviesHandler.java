@@ -38,16 +38,12 @@ public class MoviesHandler extends BaseHttpHandler {
                     }
                 }
             }
-            case "POST" -> {
-                postHeadersAndBodyOfMovies(ex);
-            }
-            default -> {
-                responseErrorGeneration(
-                        "405 Bad Method",
-                        new ArrayList<>(List.of("Данный метод не обрабатывается сервером")),
-                        405,
-                        ex);
-            }
+            case "POST" -> postHeadersAndBodyOfMovies(ex);
+            default -> responseErrorGeneration(
+                    "405 Bad Method",
+                    new ArrayList<>(List.of("Данный метод не обрабатывается сервером")),
+                    405,
+                    ex);
         }
     }
 
@@ -72,13 +68,13 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     public String storeToJSONWithID() {
-        return gson.toJson(MoviesStore.getMoviesMap());
+        long counter = MoviesStore.getMoviesMap().size();
+        return gson.toJson(MoviesStore.getMoviesMap().get(counter));
     }
 
     public void postHeadersAndBodyOfMovies(HttpExchange ex) throws IOException {
-        List<String> contentTypeList = ex.getRequestHeaders().get("Content-Type");
-        if (contentTypeList == null || contentTypeList.isEmpty() ||
-                !contentTypeList.get(0).equals("application/json; charset=UTF-8")) {
+        String contentTypeList = ex.getRequestHeaders().getFirst("Content-Type");
+        if (contentTypeList == null || !contentTypeList.equals("application/json; charset=UTF-8")) {
             responseErrorGeneration(
                     "415 Unsupported Media Type",
                     new ArrayList<>(List.of("Заголовок Content-Type должен содержать тип JSON")),
@@ -97,7 +93,7 @@ public class MoviesHandler extends BaseHttpHandler {
             return;
         }
 
-        Movie movieThatNeedPublic = null;
+        Movie movieThatNeedPublic;
         try (InputStreamReader isr = new InputStreamReader(ex.getRequestBody(), StandardCharsets.UTF_8)) {
             movieThatNeedPublic = storeFromJSON(isr);
         } catch (JsonSyntaxException | IOException e) {

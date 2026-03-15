@@ -158,8 +158,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("422 Unprocessable Entity", error.getError());
-        assertTrue(error.getDetails().contains("Название не должно быть пустым"));
+        assertEquals("422 Unprocessable Entity", error.error());
+        assertTrue(error.details().contains("Название не должно быть пустым"));
 
         // Проверяем, что фильм не добавился
         assertEquals(0, MoviesStore.getMoviesMap().size());
@@ -184,8 +184,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("422 Unprocessable Entity", error.getError());
-        assertTrue(error.getDetails().contains("Название не должно быть более 100 символов"));
+        assertEquals("422 Unprocessable Entity", error.error());
+        assertTrue(error.details().contains("Название не должно быть более 100 символов"));
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -208,8 +208,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("422 Unprocessable Entity", error.getError());
-        assertTrue(error.getDetails().contains("Несуществующий год существования фильма"));
+        assertEquals("422 Unprocessable Entity", error.error());
+        assertTrue(error.details().contains("Несуществующий год существования фильма"));
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -233,8 +233,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("422 Unprocessable Entity", error.getError());
-        assertTrue(error.getDetails().contains("Несуществующий год существования фильма"));
+        assertEquals("422 Unprocessable Entity", error.error());
+        assertTrue(error.details().contains("Несуществующий год существования фильма"));
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -257,7 +257,7 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("415 Unsupported Media Type", error.getError());
+        assertEquals("415 Unsupported Media Type", error.error());
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -319,8 +319,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("404 Not Found", error.getError());
-        assertTrue(error.getDetails().contains("Фильм не найден"));
+        assertEquals("404 Not Found", error.error());
+        assertTrue(error.details().contains("Фильм не найден"));
     }
 
     @Test
@@ -337,8 +337,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("400 Bad Request", error.getError());
-        assertTrue(error.getDetails().contains("Некорректный ID"));
+        assertEquals("400 Bad Request", error.error());
+        assertTrue(error.details().contains("Некорректный ID"));
     }
 
     //DELETE /movies/{id}
@@ -379,8 +379,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("404 Not Found", error.getError());
-        assertTrue(error.getDetails().contains("Фильм не найден"));
+        assertEquals("404 Not Found", error.error());
+        assertTrue(error.details().contains("Фильм не найден"));
     }
 
     @Test
@@ -397,8 +397,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("400 Bad Request", error.getError());
-        assertTrue(error.getDetails().contains("Некорректный ID"));
+        assertEquals("400 Bad Request", error.error());
+        assertTrue(error.details().contains("Некорректный ID"));
     }
 
     //GET /movies?year=YYYY
@@ -462,7 +462,7 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("400 Bad Request", error.getError());
+        assertEquals("400 Bad Request", error.error());
     }
 
     //Общие тесты
