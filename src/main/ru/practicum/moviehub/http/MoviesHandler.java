@@ -1,29 +1,26 @@
 package ru.practicum.moviehub.http;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import ru.practicum.moviehub.api.ErrorResponse;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Year;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
-public class MoviesHandler extends BaseHttpHandler{
+public class MoviesHandler extends BaseHttpHandler {
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
         String queryString = ex.getRequestURI().getQuery();
         setResponseHeaders(ex);
 
-        switch(method){
+        switch (method) {
             case "GET" -> {
                 if (queryString == null) getHeadersAndBodyOfMovies(ex);
                 else if (queryString.startsWith("year=")) {
@@ -33,10 +30,11 @@ public class MoviesHandler extends BaseHttpHandler{
                         yearOfMovie = Integer.parseInt(yearString);
                         getHeadersAndBodyOfMoviesWithYearFilter(ex, yearOfMovie);
                     } catch (NumberFormatException e) {
-                        String response = gson.toJson(
-                                new ErrorResponse("400 Bad Request",
-                                        (ArrayList<String>) Arrays.asList("Некорректно указан год")));
-                        sendHeadersAndResponse(response, ex, 400);
+                        responseErrorGeneration(
+                                "400 Bad Request",
+                                new ArrayList<>(List.of("Некорректно указан год")),
+                                400,
+                                ex);
                     }
                 }
             }
@@ -44,10 +42,11 @@ public class MoviesHandler extends BaseHttpHandler{
                 postHeadersAndBodyOfMovies(ex);
             }
             default -> {
-                String response = gson.toJson(
-                    new ErrorResponse("405 Bad Method",
-                            (ArrayList<String>) Arrays.asList("Данный метод не обрабатывается сервером")));
-                sendHeadersAndResponse(response, ex, 405);
+                responseErrorGeneration(
+                        "405 Bad Method",
+                        new ArrayList<>(List.of("Данный метод не обрабатывается сервером")),
+                        405,
+                        ex);
             }
         }
     }
@@ -80,19 +79,22 @@ public class MoviesHandler extends BaseHttpHandler{
         List<String> contentTypeList = ex.getRequestHeaders().get("Content-Type");
         if (contentTypeList == null || contentTypeList.isEmpty() ||
                 !contentTypeList.get(0).equals("application/json; charset=UTF-8")) {
-            String response = gson.toJson(
-                    new ErrorResponse("Неподдерживаемый тип носителя",
-                            new ArrayList<>(List.of("заголовок Content-Type должен содержать тип JSON"))));
-            sendHeadersAndResponse(response, ex, 415);
+            responseErrorGeneration(
+                    "415 Unsupported Media Type",
+                    new ArrayList<>(List.of("Заголовок Content-Type должен содержать тип JSON")),
+                    415,
+                    ex);
             return;
         }
 
         String contentLength = ex.getRequestHeaders().getFirst("Content-Length");
         if (contentLength == null) {
         } else if (Integer.parseInt(contentLength) == 0) {
-            String response = gson.toJson(new ErrorResponse("400 Bad Request",
-                    new ArrayList<>(List.of("Пустое тело запроса"))));
-            sendHeadersAndResponse(response, ex, 400);
+            responseErrorGeneration(
+                    "422 Unprocessable Entity",
+                    new ArrayList<>(List.of("Пустое тело запроса")),
+                    422,
+                    ex);
             return;
         }
 
@@ -100,32 +102,27 @@ public class MoviesHandler extends BaseHttpHandler{
         try (InputStreamReader isr = new InputStreamReader(ex.getRequestBody(), StandardCharsets.UTF_8)) {
             movieThatNeedPublic = storeFromJSON(isr);
         } catch (JsonSyntaxException | IOException e) {
-            String response = gson.toJson(
-                    new ErrorResponse("Ошибка валидации",
-                            new ArrayList<>(List.of("некорректно переданный JSON файл"))));
-            sendHeadersAndResponse(response, ex, 400);
-            return;
-        }
-
-        if (movieThatNeedPublic == null) {
-            String response = gson.toJson(
-                    new ErrorResponse("400 Bad Request",
-                            new ArrayList<>(List.of("Некорректный JSON: объект не создан"))));
-            sendHeadersAndResponse(response, ex, 400);
+            responseErrorGeneration(
+                    "422 Unprocessable Entity",
+                    new ArrayList<>(List.of("Некорректно переданный JSON файл")),
+                    422,
+                    ex);
             return;
         }
 
         if (movieThatNeedPublic.getYear() < 1888 || movieThatNeedPublic.getYear() >= Year.now().getValue() + 1) {
-            String response = gson.toJson(
-                    new ErrorResponse("Ошибка валидации",
-                            new ArrayList<>(List.of("несуществующий год существования фильма"))));
-            sendHeadersAndResponse(response, ex, 422);
+            responseErrorGeneration(
+                    "422 Unprocessable Entity",
+                    new ArrayList<>(List.of("Несуществующий год существования фильма")),
+                    422,
+                    ex);
             return;
         } else if (movieThatNeedPublic.getTitle().length() > 100 || movieThatNeedPublic.getTitle().isBlank()) {
-            String response = gson.toJson(
-                    new ErrorResponse("Ошибка валидации",
-                            new ArrayList<>(List.of("название не должно быть пустым", "название не должно быть более 100 символов"))));
-            sendHeadersAndResponse(response, ex, 422);
+            responseErrorGeneration(
+                    "422 Unprocessable Entity",
+                    new ArrayList<>(List.of("Название не должно быть пустым", "Название не должно быть более 100 символов")),
+                    422,
+                    ex);
             return;
         }
 
@@ -138,7 +135,7 @@ public class MoviesHandler extends BaseHttpHandler{
         return gson.fromJson(isr, Movie.class);
     }
 
-    public void addMoviesInStore(Movie movie){
+    public void addMoviesInStore(Movie movie) {
         MoviesStore.addMovie(movie);
     }
 }

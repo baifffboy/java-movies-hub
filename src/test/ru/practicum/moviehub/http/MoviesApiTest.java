@@ -1,7 +1,10 @@
 package ru.practicum.moviehub.http;
 
 import com.google.gson.Gson;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import ru.practicum.moviehub.api.ErrorResponse;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
@@ -16,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Year;
 import java.util.Collection;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -156,8 +158,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("Ошибка валидации", error.getError());
-        assertTrue(error.getDetails().contains("название не должно быть пустым"));
+        assertEquals("422 Unprocessable Entity", error.getError());
+        assertTrue(error.getDetails().contains("Название не должно быть пустым"));
 
         // Проверяем, что фильм не добавился
         assertEquals(0, MoviesStore.getMoviesMap().size());
@@ -182,8 +184,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("Ошибка валидации", error.getError());
-        assertTrue(error.getDetails().contains("название не должно быть более 100 символов"));
+        assertEquals("422 Unprocessable Entity", error.getError());
+        assertTrue(error.getDetails().contains("Название не должно быть более 100 символов"));
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -206,8 +208,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("Ошибка валидации", error.getError());
-        assertTrue(error.getDetails().contains("несуществующий год существования фильма"));
+        assertEquals("422 Unprocessable Entity", error.getError());
+        assertTrue(error.getDetails().contains("Несуществующий год существования фильма"));
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -231,8 +233,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("Ошибка валидации", error.getError());
-        assertTrue(error.getDetails().contains("несуществующий год существования фильма"));
+        assertEquals("422 Unprocessable Entity", error.getError());
+        assertTrue(error.getDetails().contains("Несуществующий год существования фильма"));
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -255,7 +257,7 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         ErrorResponse error = parseError(resp.body());
-        assertEquals("Неподдерживаемый тип носителя", error.getError());
+        assertEquals("415 Unsupported Media Type", error.getError());
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
     }
@@ -273,7 +275,7 @@ public class MoviesApiTest {
         HttpResponse<String> resp = client.send(req,
                 HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
 
-        assertEquals(400, resp.statusCode(), "Должен вернуться 400 Bad Request");
+        assertEquals(422, resp.statusCode(), "Должен вернуться 422 Ошибка валидации файла");
         assertContentType(resp);
 
         assertEquals(0, MoviesStore.getMoviesMap().size());
@@ -469,7 +471,7 @@ public class MoviesApiTest {
     void unsupportedMethod_returns405() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/movies"))
-                .DELETE()
+                .HEAD()
                 .build();
 
         HttpResponse<String> resp = client.send(req,

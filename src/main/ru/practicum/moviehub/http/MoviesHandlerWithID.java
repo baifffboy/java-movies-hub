@@ -1,31 +1,30 @@
 package ru.practicum.moviehub.http;
 
 import com.sun.net.httpserver.HttpExchange;
-import ru.practicum.moviehub.api.ErrorResponse;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
 
-public class MoviesHandlerWithID extends BaseHttpHandler{
+public class MoviesHandlerWithID extends BaseHttpHandler {
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
         setResponseHeaders(ex);
 
-        if (ex.getRequestURI().getPath().split("/").length != 3) {
-            String response = gson.toJson(
-                    new ErrorResponse("400 Bad Request",
-                            new ArrayList<>(Arrays.asList("ID не указан"))));
-            sendHeadersAndResponse(response, ex, 400);
+        if (ex.getRequestURI().getPath().split("/").length != 3
+                || ex.getRequestURI().getPath().split("/")[2].isEmpty()) {
+            responseErrorGeneration(
+                    "400 Bad Request",
+                    new ArrayList<>(List.of("Некорректный ID")),
+                    400,
+                    ex);
             return;
         }
 
-        switch(method){
+        switch (method) {
             case "GET" -> {
                 getHeadersAndBodyOfMovies(ex);
             }
@@ -33,33 +32,25 @@ public class MoviesHandlerWithID extends BaseHttpHandler{
                 deleteMovie(ex);
             }
             default -> {
-                String response = gson.toJson(
-                    new ErrorResponse("405 Bad Method",
-                            (ArrayList<String>) Arrays.asList("Данный метод не обрабатывается сервером")));
-                sendHeadersAndResponse(response, ex, 405);
+                responseErrorGeneration(
+                        "405 Bad Method",
+                        new ArrayList<>(List.of("Данный метод не обрабатывается сервером")),
+                        405,
+                        ex);
             }
         }
     }
 
     private void deleteMovie(HttpExchange ex) throws IOException {
-        String path = ex.getRequestURI().getPath();
-        String id_string = path.split("/")[2];
-        int id;
-        try {
-            id = Integer.parseInt(id_string);
-        } catch (NumberFormatException e) {
-            String response = gson.toJson(
-                    new ErrorResponse("400 Bad Request",
-                            (ArrayList<String>) Arrays.asList("Некорректный ID")));
-            sendHeadersAndResponse(response, ex, 400);
-            return;
-        }
+        int id = parseId(ex);
+        if (id == -1) return;
         Movie movie = MoviesStore.getMoviesMap().remove(id);
         if (movie == null) {
-            String response = gson.toJson(
-                    new ErrorResponse("404 Not Found",
-                            (ArrayList<String>) Arrays.asList("Фильм не найден")));
-            sendHeadersAndResponse(response, ex, 404);
+            responseErrorGeneration(
+                    "404 Not Found",
+                    new ArrayList<>(List.of("Фильм не найден")),
+                    404,
+                    ex);
             return;
         }
         ex.sendResponseHeaders(204, -1);
@@ -67,24 +58,15 @@ public class MoviesHandlerWithID extends BaseHttpHandler{
     }
 
     public void getHeadersAndBodyOfMovies(HttpExchange ex) throws IOException {
-        String path = ex.getRequestURI().getPath();
-        String id_string = path.split("/")[2];
-        int id;
-        try {
-            id = Integer.parseInt(id_string);
-        } catch (NumberFormatException e) {
-            String response = gson.toJson(
-                    new ErrorResponse("400 Bad Request",
-                            (ArrayList<String>) Arrays.asList("Некорректный ID")));
-            sendHeadersAndResponse(response, ex, 400);
-            return;
-        }
+        int id = parseId(ex);
+        if (id == -1) return;
         Movie movie = MoviesStore.getMoviesMap().get(id);
         if (movie == null) {
-            String response = gson.toJson(
-                    new ErrorResponse("404 Not Found",
-                            (ArrayList<String>) Arrays.asList("Фильм не найден")));
-            sendHeadersAndResponse(response, ex, 404);
+            responseErrorGeneration(
+                    "404 Not Found",
+                    new ArrayList<>(List.of("Фильм не найден")),
+                    404,
+                    ex);
             return;
         }
         String response = storeToJSONMovie(movie);
@@ -95,4 +77,18 @@ public class MoviesHandlerWithID extends BaseHttpHandler{
         return gson.toJson(movie);
     }
 
+    public int parseId(HttpExchange ex) throws IOException {
+        String path = ex.getRequestURI().getPath();
+        String id_string = path.split("/")[2];
+        try {
+            return Integer.parseInt(id_string);
+        } catch (NumberFormatException e) {
+            responseErrorGeneration(
+                    "400 Bad Request",
+                    new ArrayList<>(List.of("Некорректный ID")),
+                    400,
+                    ex);
+            return -1;
+        }
+    }
 }

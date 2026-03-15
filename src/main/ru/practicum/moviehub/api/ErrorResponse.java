@@ -2,13 +2,13 @@ package ru.practicum.moviehub.api;
 
 import java.util.ArrayList;
 
-public class ErrorResponse{
+public class ErrorResponse {
     private final String error;
     private final ArrayList<String> details;
 
-    public ErrorResponse(String shortMessage, ArrayList<String> log) {
-        this.error = shortMessage;
-        this.details = log;
+    public ErrorResponse(String error, ArrayList<String> details) {
+        this.error = error;
+        this.details = details;
     }
 
     public String getError() {

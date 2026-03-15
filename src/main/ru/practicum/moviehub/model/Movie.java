@@ -1,9 +1,5 @@
 package ru.practicum.moviehub.model;
 
-import ru.practicum.moviehub.api.ErrorResponse;
-
-import java.time.Year;
-
 public class Movie {
     private final String title;
     private final int year;
