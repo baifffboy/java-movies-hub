@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MoviesHandlerWithID extends BaseHttpHandler {
+    private MoviesStore store;
+
+    public MoviesHandlerWithID(MoviesStore store) {
+        this.store = store;
+    }
+
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
@@ -39,7 +45,7 @@ public class MoviesHandlerWithID extends BaseHttpHandler {
     private void deleteMovie(HttpExchange ex) throws IOException {
         int id = parseId(ex);
         if (id == -1) return;
-        Movie movie = MoviesStore.getMoviesMap().remove(id);
+        Movie movie = store.deleteMovie(id);
         if (movie == null) {
             responseErrorGeneration(
                     "404 Not Found",
@@ -55,7 +61,7 @@ public class MoviesHandlerWithID extends BaseHttpHandler {
     public void getHeadersAndBodyOfMovies(HttpExchange ex) throws IOException {
         int id = parseId(ex);
         if (id == -1) return;
-        Movie movie = MoviesStore.getMoviesMap().get(id);
+        Movie movie = store.getMovieById(id);
         if (movie == null) {
             responseErrorGeneration(
                     "404 Not Found",

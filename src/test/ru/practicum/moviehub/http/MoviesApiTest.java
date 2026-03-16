@@ -27,10 +27,12 @@ public class MoviesApiTest {
     private static MoviesServer server;
     private HttpClient client;
     private final Gson gson = new Gson();
+    static MoviesStore moviesStore;
 
     @BeforeAll
     static void beforeAll() {
-        server = new MoviesServer(8080);
+        moviesStore = new MoviesStore();
+        server = new MoviesServer(8080, moviesStore);
         server.start();
     }
 
@@ -39,7 +41,7 @@ public class MoviesApiTest {
         client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(2))
                 .build();
-        MoviesStore.getMoviesMap().clear();
+        moviesStore.clear();
     }
 
     @AfterAll
@@ -90,8 +92,8 @@ public class MoviesApiTest {
     @Test
     void getMovies_whenNotEmpty_returnsNotEmptyArray() throws Exception {
         // Добавляем фильмы
-        MoviesStore.addMovie(new Movie("Матрица", 1999));
-        MoviesStore.addMovie(new Movie("Терминатор", 1984));
+        moviesStore.addMovie(new Movie("Матрица", 1999));
+        moviesStore.addMovie(new Movie("Терминатор", 1984));
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/movies"))
@@ -107,8 +109,8 @@ public class MoviesApiTest {
         Collection<Movie> movies = parseMovies(resp.body());
         assertEquals(2, movies.size(), "Должно вернуться 2 фильма");
 
-        assertTrue(movies.stream().anyMatch(m -> m.getTitle().equals("Матрица") && m.getYear() == 1999));
-        assertTrue(movies.stream().anyMatch(m -> m.getTitle().equals("Терминатор") && m.getYear() == 1984));
+        assertTrue(movies.stream().anyMatch(m -> m.title().equals("Матрица") && m.year() == 1999));
+        assertTrue(movies.stream().anyMatch(m -> m.title().equals("Терминатор") && m.year() == 1984));
     }
 
     //POST /movies
@@ -131,13 +133,13 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         // Проверяем, что фильм действительно добавился
-        assertEquals(1, MoviesStore.getMoviesMap().size());
+        assertEquals(1, moviesStore.getMovies().size());
 
         // Проверяем, что ID присвоился
-        Movie addedMovie = MoviesStore.getMoviesMap().values().iterator().next();
+        Movie addedMovie = moviesStore.getMovies().iterator().next();
         assertNotNull(addedMovie);
-        assertEquals("Новый фильм", addedMovie.getTitle());
-        assertEquals(2023, addedMovie.getYear());
+        assertEquals("Новый фильм", addedMovie.title());
+        assertEquals(2023, addedMovie.year());
     }
 
     @Test
@@ -162,7 +164,7 @@ public class MoviesApiTest {
         assertTrue(error.details().contains("Название не должно быть пустым"));
 
         // Проверяем, что фильм не добавился
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMovies().size());
     }
 
     @Test
@@ -187,7 +189,7 @@ public class MoviesApiTest {
         assertEquals("422 Unprocessable Entity", error.error());
         assertTrue(error.details().contains("Название не должно быть более 100 символов"));
 
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMovies().size());
     }
 
     @Test
@@ -211,7 +213,7 @@ public class MoviesApiTest {
         assertEquals("422 Unprocessable Entity", error.error());
         assertTrue(error.details().contains("Несуществующий год существования фильма"));
 
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMovies().size());
     }
 
     @Test
@@ -236,7 +238,7 @@ public class MoviesApiTest {
         assertEquals("422 Unprocessable Entity", error.error());
         assertTrue(error.details().contains("Несуществующий год существования фильма"));
 
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMovies().size());
     }
 
     @Test
@@ -259,7 +261,7 @@ public class MoviesApiTest {
         ErrorResponse error = parseError(resp.body());
         assertEquals("415 Unsupported Media Type", error.error());
 
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMovies().size());
     }
 
     @Test
@@ -278,7 +280,7 @@ public class MoviesApiTest {
         assertEquals(422, resp.statusCode(), "Должен вернуться 422 Ошибка валидации файла");
         assertContentType(resp);
 
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMovies().size());
     }
 
     //GET /movies/{id}
@@ -286,8 +288,8 @@ public class MoviesApiTest {
     @Test
     void getMovieById_whenExists_returnsMovie() throws Exception {
         // Добавляем фильм
-        MoviesStore.addMovie(new Movie("Матрица", 1999));
-        int movieId = MoviesStore.getMoviesMap().keySet().iterator().next();
+        moviesStore.addMovie(new Movie("Матрица", 1999));
+        int movieId = moviesStore.getMoviesMap().keySet().iterator().next();
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/movies/" + movieId))
@@ -301,8 +303,8 @@ public class MoviesApiTest {
         assertContentType(resp);
 
         Movie movie = gson.fromJson(resp.body(), Movie.class);
-        assertEquals("Матрица", movie.getTitle());
-        assertEquals(1999, movie.getYear());
+        assertEquals("Матрица", movie.title());
+        assertEquals(1999, movie.year());
     }
 
     @Test
@@ -346,10 +348,10 @@ public class MoviesApiTest {
     @Test
     void deleteMovieById_whenExists_deletesMovie() throws Exception {
         // Добавляем фильм
-        MoviesStore.addMovie(new Movie("Матрица", 1999));
-        int movieId = MoviesStore.getMoviesMap().keySet().iterator().next();
+        moviesStore.addMovie(new Movie("Матрица", 1999));
+        int movieId = moviesStore.getMoviesMap().keySet().iterator().next();
 
-        assertEquals(1, MoviesStore.getMoviesMap().size());
+        assertEquals(1, moviesStore.getMoviesMap().size());
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/movies/" + movieId))
@@ -362,7 +364,7 @@ public class MoviesApiTest {
         assertEquals(204, resp.statusCode(), "При удалении должен вернуться 204 No Content");
 
         // Проверяем, что фильм удалился
-        assertEquals(0, MoviesStore.getMoviesMap().size());
+        assertEquals(0, moviesStore.getMoviesMap().size());
     }
 
     @Test
@@ -406,9 +408,9 @@ public class MoviesApiTest {
     @Test
     void getMoviesByYear_whenExists_returnsMovies() throws Exception {
         // Добавляем фильмы разных лет
-        MoviesStore.addMovie(new Movie("Матрица", 1999));
-        MoviesStore.addMovie(new Movie("Терминатор", 1984));
-        MoviesStore.addMovie(new Movie("Матрица 2", 1999));
+        moviesStore.addMovie(new Movie("Матрица", 1999));
+        moviesStore.addMovie(new Movie("Терминатор", 1984));
+        moviesStore.addMovie(new Movie("Матрица 2", 1999));
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/movies?year=1999"))
@@ -424,14 +426,14 @@ public class MoviesApiTest {
         Collection<Movie> movies = parseMovies(resp.body());
         assertEquals(2, movies.size(), "Должно быть 2 фильма 1999 года");
 
-        assertTrue(movies.stream().allMatch(m -> m.getYear() == 1999));
+        assertTrue(movies.stream().allMatch(m -> m.year() == 1999));
     }
 
     @Test
     void getMoviesByYear_whenNoMovies_returnsEmptyArray() throws Exception {
         // Добавляем фильмы других лет
-        MoviesStore.addMovie(new Movie("Матрица", 1999));
-        MoviesStore.addMovie(new Movie("Терминатор", 1984));
+        moviesStore.addMovie(new Movie("Матрица", 1999));
+        moviesStore.addMovie(new Movie("Терминатор", 1984));
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/movies?year=2000"))

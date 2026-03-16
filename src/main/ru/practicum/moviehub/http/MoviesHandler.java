@@ -13,6 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MoviesHandler extends BaseHttpHandler {
+    private MoviesStore store;
+
+    public MoviesHandler(MoviesStore store) {
+        this.store = store;
+    }
+
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
@@ -57,16 +63,16 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     public String storeToJSONWithoutID() {
-        return gson.toJson(MoviesStore.getMoviesMap().values());
+        return gson.toJson(store.getMovies());
     }
 
     public String storeToJSONWithoutIDWithYearFilter(int year) {
-        return gson.toJson(MoviesStore.filterMoviesByYear(year));
+        return gson.toJson(store.filterMoviesByYear(year));
     }
 
     public String storeToJSONWithID() {
-        int counter = MoviesStore.getMoviesMap().size();
-        return gson.toJson(MoviesStore.getMoviesMap().get(counter));
+        int counter = store.getMovies().size();
+        return gson.toJson(store.getMovieById(counter));
     }
 
     public void postHeadersAndBodyOfMovies(HttpExchange ex) throws IOException {
@@ -102,14 +108,14 @@ public class MoviesHandler extends BaseHttpHandler {
             return;
         }
 
-        if (movieThatNeedPublic.getYear() < 1888 || movieThatNeedPublic.getYear() >= Year.now().getValue() + 1) {
+        if (movieThatNeedPublic.year() < 1888 || movieThatNeedPublic.year() >= Year.now().getValue() + 1) {
             responseErrorGeneration(
                     "422 Unprocessable Entity",
                     new ArrayList<>(List.of("Несуществующий год существования фильма")),
                     422,
                     ex);
             return;
-        } else if (movieThatNeedPublic.getTitle().length() > 100 || movieThatNeedPublic.getTitle().isBlank()) {
+        } else if (movieThatNeedPublic.title().length() > 100 || movieThatNeedPublic.title().isBlank()) {
             responseErrorGeneration(
                     "422 Unprocessable Entity",
                     new ArrayList<>(List.of("Название не должно быть пустым", "Название не должно быть более 100 символов")),
@@ -128,6 +134,6 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     public void addMoviesInStore(Movie movie) {
-        MoviesStore.addMovie(movie);
+        store.addMovie(movie);
     }
 }
