@@ -1,5 +1,4 @@
 package ru.practicum.moviehub.model;
 
-public class Movie {
-
+public record Movie(String title, int year) {
 }
